@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>誰是帥潮</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-screen" class="screen">
+        <h1>誰是帥潮</h1>
+        <div class="input-group">
+            <label for="nickname">你的稱號：</label>
+            <input type="text" id="nickname" placeholder="最多10字" value="" maxlength="10" autocomplete="off">
+        </div>
+        <div class="actions">
+            <div class="action-box">
+                <h3>創建新房間</h3>
+                <button id="btn-create" class="btn primary big-btn">創建房間</button>
+            </div>
+            <div class="divider">或</div>
+            <div class="action-box">
+                <h3>加入現有房間</h3>
+                <div class="join-inputs">
+                    <input type="text" id="room-input" placeholder="輸入4位數房號" maxlength="4" autocomplete="off">
+                    <button id="btn-join" class="btn secondary">加入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lobby-screen" class="screen hidden">
+        <div class="room-header">
+            <h2>房間號碼: <span id="display-room-id">----</span></h2>
+        </div>
+        
+        <div class="players-grid" id="lobby-players-container">
+            </div>
+
+        <div class="lobby-controls">
+            <div id="host-controls" class="control-group hidden">
+                <button id="btn-start" class="btn primary">開始遊戲</button>
+                <button id="btn-disband" class="btn danger">解散房間</button>
+            </div>
+            <div id="guest-controls" class="control-group hidden">
+                <button id="btn-ready" class="btn secondary">準備</button>
+                <button id="btn-leave" class="btn danger">離開房間</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="top-bar">
+            <div class="timer-box">倒數: <span id="game-timer">--</span></div>
+            <div class="role-hint">你的詞: <span id="my-word" style="color:#f1c40f; font-weight:bold;">???</span></div>
+        </div>
+
+        <div class="game-players" id="game-players-container"></div>
+
+        <div class="bottom-panel">
+            <div id="status-container">
+                <h2 id="status-text">等待遊戲開始...</h2>
+            </div>
+            
+            <button id="btn-skip" class="btn secondary hidden" style="margin-top: 10px;">跳過發言 (結束回合)</button>
+
+            <div id="vote-area" class="hidden">
+                <h3 style="color: #f1c40f;">請點擊上方玩家頭像進行投票</h3>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay" class="hidden">
+        <div class="overlay-content">
+            <h1 id="overlay-title">標題</h1>
+            <p id="overlay-msg">訊息內容</p>
+        </div>
+    </div>
+
+    <div id="music-toggle" class="music-btn">
+        <span id="music-icon">🎵</span>
+        <span id="music-text">播放中</span>
+    </div>
+
+    <div id="creator-mark">製作人BOB</div>
+
+    <audio id="bgm" loop>
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
