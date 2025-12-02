@@ -131,7 +131,7 @@ socket.on('updatePlayerList', (players) => {
 
 socket.on('gameStarted', ({ role, word }) => {
     showScreen('game');
-    showOverlay(`你是：${role}`, `你的詞是：${word} <br> (10秒後開始)`);
+    showOverlay(`你的詞是：${word} <br> (10秒後開始)`);
     document.getElementById('my-word').innerText = word;
     renderGamePlayers(currentPlayers);
 });
