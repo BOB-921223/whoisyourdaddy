@@ -46,17 +46,13 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ★★★ 新增：離開房間邏輯 ★★★
     socket.on('leaveRoom', (roomId) => {
         const room = rooms[roomId];
         if (room) {
             const index = room.players.findIndex(p => p.id === socket.id);
             if (index !== -1) {
-                // 移除玩家
                 room.players.splice(index, 1);
-                // 通知其他人
                 io.in(roomId).emit('updatePlayerList', room.players);
-                // 讓 Socket 離開房間頻道
                 socket.leave(roomId);
             }
         }
@@ -157,7 +153,10 @@ function getUnusedWordPair(room) {
 function startGameLogic(roomId) {
     const room = rooms[roomId];
     room.status = 'reveal';
-    room.gameData.usedWordIndices = []; 
+    // 遊戲開始時，使用新的題目，並記錄下來
+    // 注意：usedWordIndices 只有在完全沒有題目可用時才會清空重置，
+    // 這邊只在 startGameLogic 呼叫 getUnusedWordPair，保證每局新遊戲是新題目。
+    if (!room.gameData.usedWordIndices) room.gameData.usedWordIndices = [];
 
     const wordPair = getUnusedWordPair(room);
     const undercoverIndex = Math.floor(Math.random() * room.players.length);
@@ -286,6 +285,7 @@ function calculateVoteResult(roomId) {
         io.in(roomId).emit('showResult', { msg: "今晚沒抓到帥潮", duration: 8 });
         
         setTimeout(() => {
+             // 平票：不換題，繼續下一輪發言
              if(room.status !== 'waiting') startSpeakingPhase(roomId);
         }, 8000);
     } 
@@ -300,20 +300,7 @@ function calculateVoteResult(roomId) {
     }
 }
 
-function startNextRoundWithNewWords(roomId) {
-    const room = rooms[roomId];
-    const newWordPair = getUnusedWordPair(room);
-    room.gameData.wordPair = newWordPair;
-    room.players.forEach(p => {
-        if (p.isAlive) {
-            const word = (p.id === room.gameData.undercoverId) ? newWordPair.undercover : newWordPair.normal;
-            io.to(p.id).emit('updateWord', { word: word });
-        }
-    });
-    io.in(roomId).emit('systemMessage', '題目已更新！發言階段開始');
-    startSpeakingPhase(roomId);
-}
-
+// ★★★ 核心修改：判斷勝負後，若遊戲繼續，不換題目 ★★★
 function checkWinCondition(roomId, deadPlayerId, deadPlayerName) {
     const room = rooms[roomId];
     const undercoverId = room.gameData.undercoverId;
@@ -332,18 +319,22 @@ function checkWinCondition(roomId, deadPlayerId, deadPlayerName) {
         isGameOver = true;
     }
     else {
-        io.in(roomId).emit('showResult', { msg: `淘汰者是：${deadPlayerName}。更換題目繼續...`, duration: 8 });
+        // ★★★ 修改處：有人被淘汰，但遊戲未結束 -> 直接進入下一輪發言 (不換題) ★★★
+        io.in(roomId).emit('showResult', { msg: `淘汰者是：${deadPlayerName}。遊戲繼續...`, duration: 8 });
         setTimeout(() => {
-             if(room.status !== 'waiting') startNextRoundWithNewWords(roomId);
+             if(room.status !== 'waiting') startSpeakingPhase(roomId);
         }, 8000);
         return;
     }
 
+    // 如果遊戲結束 (isGameOver = true)
     if (isGameOver) {
         io.in(roomId).emit('showResult', { msg: winMsg, duration: 10 });
         room.status = 'waiting'; 
         room.players.forEach(p => { p.isReady = p.isHost; p.isAlive = true; });
+        
         setTimeout(() => {
+             // 遊戲重置回到大廳。下次按「開始遊戲」時，會呼叫 startGameLogic 重新選詞
              io.in(roomId).emit('gameReset'); 
              io.in(roomId).emit('updatePlayerList', room.players);
         }, 10000);
